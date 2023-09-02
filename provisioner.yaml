@@ -1,0 +1,43 @@
+apiVersion: karpenter.sh/v1alpha5
+kind: Provisioner
+metadata:
+  name: default
+spec:
+  labels:
+    nodetype: spot
+  requirements:
+    - key: karpenter.k8s.aws/instance-category
+      operator: In
+      values: [t, m, r]
+    - key: topology.kubernetes.io/zone
+      operator: In
+      values: ["us-west-2a", "us-west-2b", "us-west-2c", "us-west-2d"]
+    - key: karpenter.k8s.aws/instance-generation
+      operator: Gt
+      values: ["2"]
+    - key: kubernetes.io/arch
+      operator: In
+      values: ["amd64"]
+    - key: karpenter.k8s.aws/instance-size
+      operator: In
+      values: [nano, micro, small, medium, large]
+    - key: karpenter.sh/capacity-type
+      operator: In
+      values:
+        - spot
+  providerRef:
+    name: default
+  ttlSecondsAfterEmpty: 10
+---
+apiVersion: karpenter.k8s.aws/v1alpha1
+kind: AWSNodeTemplate
+metadata:
+  name: default
+spec:
+  tags:
+    Name: karpenter-spot-worker
+  amiFamily: AL2
+  subnetSelector:
+    karpenter.sh/discovery: cluster-name
+  securityGroupSelector:
+    karpenter.sh/discovery: cluster-name
